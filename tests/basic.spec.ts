@@ -1,7 +1,7 @@
 import { expect } from 'chai'
 import { PermissionsGuard, PermissionError, PermissionRuleError } from '../dist'
 
-describe('PermissionsGuard', () => {
+describe('Basics', () => {
   const rules = ['entity/read', 'entity/write']
   const owner = 'user123'
 

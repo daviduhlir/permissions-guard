@@ -2,23 +2,29 @@ import { AsyncLocalStorage } from 'async_hooks'
 import { PermissionRule, PermissionsGuardContextMetadata } from '../interfaces'
 import { PermissionError, PermissionRuleError } from '../utils/errors'
 
+const createStorage = () => {
+  const storage = new AsyncLocalStorage<{ [key: symbol]: PermissionsGuardContextMetadata<any> }>();
+  return {
+    run: storage.run.bind(storage),
+    getStore: storage.getStore.bind(storage),
+  }
+}
+
+const storage = createStorage();
+
 /**
  * Rights can be specified like paths, basically like entity/write.
  * The last part of the path should be the action, specifying what you can do with the entity.
  * If you have rights like `/`, it means you can do everything.
  */
 export class PermissionsGuardClass<OwnerType = string> {
+  private readonly unique = Symbol('PermissionsGuardClassUnique')
   constructor(
     protected readonly ownerChecker: (contextOwner: OwnerType, requestedOwner: OwnerType) => Promise<boolean> = async (
       contextOwner,
       requestedOwner,
     ) => contextOwner === requestedOwner,
   ) {}
-
-  /**
-   * AsyncLocalStorage to store permission context for the current execution flow.
-   */
-  protected contextStorage = new AsyncLocalStorage<PermissionsGuardContextMetadata<OwnerType>>()
 
   /**
    * Decorator to enforce required permissions on a method.
@@ -47,7 +53,10 @@ export class PermissionsGuardClass<OwnerType = string> {
     if (context) {
       throw new Error('Nested permissions context is dangerous, and it is not allowed.')
     }
-    return this.contextStorage.run({ rules, owner }, callback)
+    return storage.run({
+      ...storage.getStore(),
+      [this.unique]: { rules, owner }
+    }, callback)
   }
 
   /**
@@ -55,7 +64,7 @@ export class PermissionsGuardClass<OwnerType = string> {
    * @returns Array of permission rules or undefined if no context exists.
    */
   public async getContext() {
-    return this.contextStorage.getStore()
+    return storage.getStore()?.[this.unique]
   }
 
   /**
@@ -131,8 +140,22 @@ export class PermissionsGuardClass<OwnerType = string> {
    * Parses a permission rule into its components.
    * @param rule The permission rule to parse.
    * @returns Array of rule components.
+   * @throws PermissionError if the rule contains invalid characters.
    */
   protected static parseRule(rule: PermissionRule) {
+    if (typeof rule !== 'string') {
+      throw new PermissionError('Permission rule must be a string')
+    }
+
+    if (rule?.length > 2048) {
+      throw new PermissionError('Permission rule is too long')
+    }
+
+    // Check for invalid characters like newlines, tabs, or control characters
+    if (/[\n\r\t]/.test(rule)) {
+      throw new PermissionError('Invalid characters in permission rule')
+    }
+
     return rule
       .split(`/`)
       .filter(Boolean)
