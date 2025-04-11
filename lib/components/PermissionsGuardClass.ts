@@ -135,7 +135,7 @@ export class PermissionsGuardClass<OwnerType = string> {
     if (store.rules.some(rule => typeof rule !== 'string')) {
       throw new Error('Invalid rules: must be an array of strings')
     }
-    return JSON.parse(JSON.stringify(store))
+    return { ...store, rules: [...store.rules] }
   }
 
   /**

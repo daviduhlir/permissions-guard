@@ -120,6 +120,26 @@ Runs a callback within a permission context.
   - `callback` (Function): Callback function to execute within the context.
 - **Returns**: The result of the callback function.
 
+#### `runWithAdminPermissions<T>(rules: PermissionRule[], callback: () => Promise<T>): Promise<T>`
+
+Runs a callback within an administrative permission context. This allows access to entities or actions that are typically restricted to administrators.
+
+- **Parameters**:
+  - `rules` (PermissionRule[]): Array of permission rules to set in the context.
+  - `callback` (Function): Callback function to execute within the administrative context.
+- **Returns**: The result of the callback function.
+
+- **Example**:
+  ```typescript
+  const adminRules = ['entity/read', 'entity/write', 'admin/manage']
+
+  await PermissionsGuard.runWithAdminPermissions(adminRules, async () => {
+    // Admin can access restricted resources
+    await PermissionsGuard.checkRequiredPermissions(['admin/manage'])
+    await PermissionsGuard.checkRequiredOwner('user456') // Admin can access entities owned by others
+  })
+  ```
+
 #### `getContext(): PermissionsGuardContextMetadata<OwnerType> | undefined`
 
 Retrieves the current permission context, including both the rules and the owner.
