@@ -116,17 +116,21 @@ Runs a callback within a permission context.
   - `callback` (Function): Callback function to execute within the context.
 - **Returns**: The result of the callback function.
 
-#### `getContextRules(): Promise<PermissionRule[] | undefined>`
+#### `getContext(): PermissionsGuardContextMetadata<OwnerType> | undefined`
 
-Retrieves the current context's permission rules.
+Retrieves the current permission context, including both the rules and the owner.
 
-- **Returns**: Array of permission rules or `undefined` if no context exists.
+- **Returns**: An object containing the current context's permission rules and owner, or `undefined` if no context exists.
 
-#### `getContextOwner(): Promise<OwnerType | null>`
-
-Retrieves the current context's owner.
-
-- **Returns**: The owner of the current context or `null` if no context exists.
+- **Example**:
+  ```typescript
+  const context = PermissionsGuard.getContext()
+  if (context) {
+    console.log('Rules:', context.rules)
+    console.log('Owner:', context.owner)
+  } else {
+    console.log('No context exists.')
+  }
 
 #### `checkRequiredPermissions(required: PermissionRule[]): Promise<void>`
 
