@@ -1,7 +1,6 @@
 export type PermissionRule = string
-export type OwnerType = string
 
-export interface PermissionsGuardContextMetadata {
-  rules: PermissionRule[];
+export interface PermissionsGuardContextMetadata<OwnerType> {
+  rules: PermissionRule[]
   owner: OwnerType
 }

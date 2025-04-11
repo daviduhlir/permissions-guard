@@ -1,4 +1,4 @@
-import { PermissionRule } from "../interfaces"
+import { PermissionRule } from '../interfaces'
 
 /**
  * Error thrown when required permission rules are not matched.
@@ -32,9 +32,7 @@ export class PermissionError extends Error {
   /**
    * @param message Error message.
    */
-  constructor(
-    public readonly message: string = 'Permissions denied',
-  ) {
+  constructor(public readonly message: string = 'Permissions denied') {
     super(`${message}`)
     const actualProto = new.target.prototype
     if (Object.setPrototypeOf) {
