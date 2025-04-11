@@ -18,7 +18,6 @@ export class PermissionError extends Error {
   }
 }
 
-
 /**
  * Error thrown when required permission rules are not matched.
  */
