@@ -18,7 +18,6 @@ const storage = createStorage();
  * If you have rights like `/`, it means you can do everything.
  */
 export class PermissionsGuardClass<OwnerType = string> {
-  private readonly unique = Symbol('PermissionsGuardClassUnique')
   constructor(
     protected readonly ownerChecker: (contextOwner: OwnerType, requestedOwner: OwnerType) => Promise<boolean> = async (
       contextOwner,
@@ -49,14 +48,28 @@ export class PermissionsGuardClass<OwnerType = string> {
    * @returns The result of the callback function.
    */
   public async runWithPermissions<T>(rules: PermissionRule[], owner: OwnerType, callback: () => Promise<T>) {
+    if (this.nestingLevel > 0) {
+      throw new Error('Nested permissions context is dangerous, and it is not allowed.');
+    }
+    if (!Array.isArray(rules) || rules.some(rule => typeof rule !== 'string')) {
+      throw new Error('Invalid rules: must be an array of strings');
+    }
+    if (typeof owner !== 'string' || owner.trim() === '') {
+      throw new Error('Invalid owner: must be a non-empty string');
+    }
     const context = await this.getContext()
     if (context) {
       throw new Error('Nested permissions context is dangerous, and it is not allowed.')
     }
-    return storage.run({
-      ...storage.getStore(),
-      [this.unique]: { rules, owner }
-    }, callback)
+    this.nestingLevel++
+    try {
+      return await storage.run({
+        ...storage.getStore(),
+        [this.unique]: { rules, owner }
+      }, callback)
+    } finally {
+      this.nestingLevel--
+    }
   }
 
   /**
@@ -64,7 +77,17 @@ export class PermissionsGuardClass<OwnerType = string> {
    * @returns Array of permission rules or undefined if no context exists.
    */
   public async getContext() {
-    return storage.getStore()?.[this.unique]
+    const store = storage.getStore()?.[this.unique]
+    if (!store) {
+      return undefined
+    }
+    if (!store.rules || !Array.isArray(store.rules)) {
+      throw new Error('Invalid rules: must be an array of strings');
+    }
+    if (store.rules.some(rule => typeof rule !== 'string')) {
+      throw new Error('Invalid rules: must be an array of strings');
+    }
+    return JSON.parse(JSON.stringify(store))
   }
 
   /**
@@ -77,6 +100,7 @@ export class PermissionsGuardClass<OwnerType = string> {
     if (!context) {
       throw new PermissionError('Unauthorized')
     }
+    required.forEach(rule => PermissionsGuardClass.parseRule(rule));
     await PermissionsGuardClass.match(required, context?.rules)
   }
 
@@ -100,6 +124,8 @@ export class PermissionsGuardClass<OwnerType = string> {
    * Internal methods
    *
    ****************************/
+  private readonly unique = Symbol('PermissionsGuardClassUnique')
+  private nestingLevel = 0;
 
   /**
    * Matches required permission rules against available rules.
