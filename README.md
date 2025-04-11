@@ -79,12 +79,16 @@ await PermissionsGuard.runWithPermissions(['entity/write'], 'user123', async () 
 Permission rules support wildcards (`*`) and hierarchical paths for flexible matching:
 
 ```typescript
-const rules = ['entity/*', '/'] // Grants all permissions under "entity" and everything globally
+const rules = ['entity/*'] // Grants all permissions under "entity"
 
 await PermissionsGuard.runWithPermissions(rules, 'user123', async () => {
   await PermissionsGuard.checkRequiredPermissions(['entity/read']) // Matches
   await PermissionsGuard.checkRequiredPermissions(['entity/write']) // Matches
-  await PermissionsGuard.checkRequiredPermissions(['otherEntity/action']) // Matches because of "/"
+  try {
+    await PermissionsGuard.checkRequiredPermissions(['otherEntity/action']) // Does NOT match
+  } catch (err) {
+    console.error('Permission denied for otherEntity/action') // Expected behavior
+  }
 })
 ```
 
