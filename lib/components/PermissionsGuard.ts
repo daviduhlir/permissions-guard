@@ -1,74 +1,24 @@
 import { AsyncLocalStorage } from 'async_hooks'
+import { OwnerType, PermissionRule, PermissionsGuardContextMetadata } from '../interfaces'
+import { PermissionError, PermissionRuleError } from '../utils/errors'
 
 /**
  * Rights can be specified like paths, basically like entity/write.
  * The last part of the path should be the action, specifying what you can do with the entity.
  * If you have rights like `/`, it means you can do everything.
  */
-export type PermissionRule = string
-
-/**
- * Error thrown when required permission rules are not matched.
- */
-export class PermissionRuleError extends Error {
-  /**
-   * @param details Details about the required and unmatched rules.
-   * @param message Error message.
-   */
-  constructor(
-    public readonly details: {
-      required: PermissionRule[]
-      notMatched: PermissionRule[]
-    },
-    public readonly message: string = 'Permissions denied',
-  ) {
-    super(`${message}${details.notMatched.length ? ` [missing rules: ${details.notMatched.join(', ')}]` : ``}`)
-    const actualProto = new.target.prototype
-    if (Object.setPrototypeOf) {
-      Object.setPrototypeOf(this, actualProto)
-    } else {
-      ;(this as any).__proto__ = actualProto
-    }
-  }
-}
-
-/**
- * Error thrown when a user is unauthorized.
- */
-export class PermissionError extends Error {
-  /**
-   * @param message Error message.
-   */
-  constructor(
-    public readonly message: string = 'Permissions denied',
-  ) {
-    super(`${message}`)
-    const actualProto = new.target.prototype
-    if (Object.setPrototypeOf) {
-      Object.setPrototypeOf(this, actualProto)
-    } else {
-      ;(this as any).__proto__ = actualProto
-    }
-  }
-}
-
-export type OwnerType = string
-
-/**
- * Helper class to manage and enforce permission rules.
- */
 export class PermissionsGuard {
   /**
    * AsyncLocalStorage to store permission context for the current execution flow.
    */
-  protected static contextStorage = new AsyncLocalStorage<{ rules: PermissionRule[]; owner: any }>()
+  protected static contextStorage = new AsyncLocalStorage<PermissionsGuardContextMetadata>()
 
   /**
    * Decorator to enforce required permissions on a method.
    * @param required Array of required permission rules.
    * @returns A method decorator.
    */
-  public static permissionRequired = (required: PermissionRule[] = []) => {
+  public static PermissionRequired = (required: PermissionRule[] = []) => {
     return (target: any, memberName: string, descriptor) => {
       const originalFunction = descriptor.value
       descriptor.value = async (...args) => {
