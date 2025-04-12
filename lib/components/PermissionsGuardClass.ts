@@ -203,6 +203,9 @@ export class PermissionsGuardClass<OwnerType = string> {
    * @returns True if the rules match, false otherwise.
    */
   protected static matchRule(requiredRule: PermissionRule, rule: PermissionRule) {
+    if (rule.length === 0) {
+      return false
+    }
     const requiredRuleParts = PermissionsGuardClass.parseRule(requiredRule)
     const ruleParts = PermissionsGuardClass.parseRule(rule)
 

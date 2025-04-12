@@ -14,8 +14,10 @@
 
 Permission rules are defined as hierarchical paths, similar to file system paths. This allows for fine-grained control over permissions. For example:
 
-- `/` grants all permissions.
+- `*` will match all rules
+- `/` will not match any rule, due to security.
 - `entity` grants permissions for all actions under `entity`, such as `entity/read` or `entity/write`.
+- `entity/*` will behaves same as just `entity`
 - `entity/write` grants permission only for the specific action `write` under `entity`.
 
 Additionally, wildcard (`*`) support allows for flexible matching:
