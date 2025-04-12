@@ -11,7 +11,7 @@ const createStorage = () => {
 }
 
 const storage = createStorage()
-const adminGrantOwner = Symbol('adminGrantOwner')
+const ownerBypassSymbol = Symbol('ownerBypassSymbol')
 
 /**
  * Rights can be specified like paths, basically like entity/write.
@@ -23,7 +23,7 @@ export class PermissionsGuardClass<OwnerType = string> {
     protected readonly ownerChecker: (contextOwner: OwnerType, requestedOwner: OwnerType) => Promise<boolean> = async (
       contextOwner,
       requestedOwner,
-    ) => contextOwner === requestedOwner || contextOwner === adminGrantOwner,
+    ) => contextOwner === requestedOwner || contextOwner === ownerBypassSymbol,
   ) {}
 
   /**
@@ -48,8 +48,8 @@ export class PermissionsGuardClass<OwnerType = string> {
    * @param callback Callback function to execute within the context.
    * @returns The result of the callback function.
    */
-  public async runWithAdminPermissions<T>(rules: PermissionRule[], callback: () => Promise<T>) {
-    return this.runWithPermissions(rules, adminGrantOwner, callback)
+  public async runWithPermissionsBypassOwner<T>(rules: PermissionRule[], callback: () => Promise<T>) {
+    return this.runWithPermissions(rules, ownerBypassSymbol, callback)
   }
 
   /**
@@ -60,14 +60,10 @@ export class PermissionsGuardClass<OwnerType = string> {
    * @returns The result of the callback function.
    */
   public async runWithPermissions<T>(rules: PermissionRule[], owner: OwnerType | symbol, callback: () => Promise<T>) {
-    if (this.nestingLevel > 0) {
-      throw new Error('Nested permissions context is dangerous, and it is not allowed.')
-    }
     const context = await this.getContext()
     if (context) {
       throw new Error('Nested permissions context is dangerous, and it is not allowed.')
     }
-    this.nestingLevel++
     try {
       return await storage.run(
         {
@@ -78,8 +74,6 @@ export class PermissionsGuardClass<OwnerType = string> {
       )
     } catch (err) {
       throw err
-    } finally {
-      this.nestingLevel--
     }
   }
 
@@ -118,7 +112,6 @@ export class PermissionsGuardClass<OwnerType = string> {
    *
    ****************************/
   private readonly unique = Symbol('PermissionsGuardClassUnique')
-  private nestingLevel = 0
 
   /**
    * Retrieves the current context's permission rules.

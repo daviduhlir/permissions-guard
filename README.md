@@ -144,7 +144,7 @@ Runs a callback within a permission context.
   - `callback` (Function): Callback function to execute within the context.
 - **Returns**: The result of the callback function.
 
-#### `runWithAdminPermissions<T>(rules: PermissionRule[], callback: () => Promise<T>): Promise<T>`
+#### `runWithPermissionsBypassOwner<T>(rules: PermissionRule[], callback: () => Promise<T>): Promise<T>`
 
 Runs a callback within an administrative permission context. This allows access to entities or actions that are typically restricted to administrators.
 
