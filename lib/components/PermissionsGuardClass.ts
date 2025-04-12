@@ -206,31 +206,22 @@ export class PermissionsGuardClass<OwnerType = string> {
     const requiredRuleParts = PermissionsGuardClass.parseRule(requiredRule)
     const ruleParts = PermissionsGuardClass.parseRule(rule)
 
-    let requiredIndex = 0
     let ruleIndex = 0
-
-    while (requiredIndex < requiredRuleParts.length && ruleIndex < ruleParts.length) {
+    while (ruleIndex < requiredRuleParts.length && ruleIndex < ruleParts.length) {
       const rulePart = ruleParts[ruleIndex]
 
       if (rulePart === '**') {
-        // Pokud je část pravidla "**", odpovídá všem zbývajícím částem požadovaného pravidla
         return true
       } else if (rulePart === '*') {
-        // Pokud je část pravidla "*", odpovídá jakékoli jedné části požadovaného pravidla
-        requiredIndex++
         ruleIndex++
         continue
-      } else if (rulePart !== requiredRuleParts[requiredIndex]) {
-        // Pokud se aktuální část pravidla neshoduje s požadovanou částí, pravidlo neodpovídá
+      } else if (rulePart !== requiredRuleParts[ruleIndex]) {
         return false
       }
-
-      // Pokračujeme na další část
-      requiredIndex++
       ruleIndex++
     }
 
     // Pokud jsme zpracovali všechny části pravidla a požadovaného pravidla, pravidlo odpovídá
-    return requiredIndex === requiredRuleParts.length && ruleIndex === ruleParts.length
+    return ruleIndex === requiredRuleParts.length && ruleIndex === ruleParts.length
   }
 }
