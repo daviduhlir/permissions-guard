@@ -157,7 +157,7 @@ Runs a callback within an administrative permission context. This allows access 
   ```typescript
   const adminRules = ['entity/read', 'entity/write', 'admin/manage']
 
-  await PermissionsGuard.runWithAdminPermissions(adminRules, async () => {
+  await PermissionsGuard.runWithPermissionsBypassOwner(adminRules, async () => {
     // Admin can access restricted resources
     await PermissionsGuard.checkRequiredPermissions(['admin/manage'])
     await PermissionsGuard.checkRequiredOwner('user456') // Admin can access entities owned by others

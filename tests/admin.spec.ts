@@ -8,7 +8,7 @@ describe('Admin', () => {
   const otherOwner = 'user456'
 
   it('should allow admin to access entities owned by others', async () => {
-    await PermissionsGuard.runWithAdminPermissions(adminRules, async () => {
+    await PermissionsGuard.runWithPermissionsBypassOwner(adminRules, async () => {
       // Admin should be able to access entities owned by others
       await PermissionsGuard.checkRequiredOwner(otherOwner)
     })
