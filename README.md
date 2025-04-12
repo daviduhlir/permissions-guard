@@ -14,17 +14,38 @@
 
 Permission rules are defined as hierarchical paths, similar to file system paths. This allows for fine-grained control over permissions. For example:
 
-- `*`: Matches all rules.
-- `/`: Does not match any rule (disabled for security reasons).
-- `entity`: Grants permissions for all actions under `entity`, such as `entity/read` or `entity/write`.
-- `entity/*`: Behaves the same as `entity`, granting all permissions under `entity`.
-- `entity/write`: Grants permission only for the specific action `write` under `entity`.
+- `*`: Matches any single segment of a rule (e.g., `entity/*` matches `entity/read` but not `entity/sub/read`).
+- `**`: Matches zero or more segments of a rule (e.g., `entity/**` matches `entity/read`, `entity/sub/read`, and `entity`).
+- `/`: Matches only when no specific permissions are required (disabled for security reasons in most cases).
+- `entity`: Matches only the exact `entity` rule.
+- `entity/*`: Matches any single action under `entity`, such as `entity/read` or `entity/write`.
+- `entity/**`: Matches all actions and sub-actions under `entity`, such as `entity/read`, `entity/write`, or `entity/sub/action`.
 
 ### Wildcard Support
 
-Wildcard (`*`) allows for flexible matching of rules:
+Wildcard rules allow for flexible matching:
 
-- `entity/*`: Grants all permissions under `entity`.
+- `*`: Matches exactly one segment of a rule.
+- `**`: Matches zero or more segments of a rule.
+
+### Examples
+
+```typescript
+const rules = ['entity/*', 'entity/**', 'admin/**']
+
+await PermissionsGuard.runWithPermissions(rules, 'user123', async () => {
+  await PermissionsGuard.checkRequiredPermissions(['entity/read']) // Matches 'entity/*'
+  await PermissionsGuard.checkRequiredPermissions(['entity/sub/read']) // Matches 'entity/**'
+  await PermissionsGuard.checkRequiredPermissions(['admin/manage']) // Matches 'admin/**'
+
+  try {
+    await PermissionsGuard.checkRequiredPermissions(['otherEntity/action']) // Does NOT match
+  } catch (err) {
+    console.error('Permission denied for otherEntity/action') // Expected behavior
+  }
+})
+```
+
 ## Installation
 
 Install the package using npm or yarn:

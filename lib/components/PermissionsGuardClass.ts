@@ -202,23 +202,35 @@ export class PermissionsGuardClass<OwnerType = string> {
    * @param rule The available permission rule.
    * @returns True if the rules match, false otherwise.
    */
-  protected static matchRule(requiredRule: PermissionRule, rule: PermissionRule) {
-    if (rule.length === 0) {
-      return false
-    }
+  protected static matchRule(requiredRule: PermissionRule, rule: PermissionRule): boolean {
     const requiredRuleParts = PermissionsGuardClass.parseRule(requiredRule)
     const ruleParts = PermissionsGuardClass.parseRule(rule)
 
-    if (requiredRuleParts.length < ruleParts.length) {
-      return false
-    }
+    let requiredIndex = 0
+    let ruleIndex = 0
 
-    for (let i = 0; i < ruleParts.length; i++) {
-      if (ruleParts[i] !== '*' && ruleParts[i] !== requiredRuleParts[i]) {
+    while (requiredIndex < requiredRuleParts.length && ruleIndex < ruleParts.length) {
+      const rulePart = ruleParts[ruleIndex]
+
+      if (rulePart === '**') {
+        // Pokud je část pravidla "**", odpovídá všem zbývajícím částem požadovaného pravidla
+        return true
+      } else if (rulePart === '*') {
+        // Pokud je část pravidla "*", odpovídá jakékoli jedné části požadovaného pravidla
+        requiredIndex++
+        ruleIndex++
+        continue
+      } else if (rulePart !== requiredRuleParts[requiredIndex]) {
+        // Pokud se aktuální část pravidla neshoduje s požadovanou částí, pravidlo neodpovídá
         return false
       }
+
+      // Pokračujeme na další část
+      requiredIndex++
+      ruleIndex++
     }
 
-    return true
+    // Pokud jsme zpracovali všechny části pravidla a požadovaného pravidla, pravidlo odpovídá
+    return requiredIndex === requiredRuleParts.length && ruleIndex === ruleParts.length
   }
 }

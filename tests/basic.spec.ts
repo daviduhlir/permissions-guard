@@ -35,7 +35,7 @@ describe('Basics', () => {
   })
 
   it('should validate hierarchical permissions (e.g., entity includes entity/write)', async () => {
-    await PermissionsGuard.runWithPermissions(['entity'], owner, async () => {
+    await PermissionsGuard.runWithPermissions(['entity/*'], owner, async () => {
       await PermissionsGuard.checkRequiredPermissions(['entity/write'])
     })
   })
