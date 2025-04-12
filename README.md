@@ -14,16 +14,17 @@
 
 Permission rules are defined as hierarchical paths, similar to file system paths. This allows for fine-grained control over permissions. For example:
 
-- `*` will match all rules
-- `/` will not match any rule, due to security.
-- `entity` grants permissions for all actions under `entity`, such as `entity/read` or `entity/write`.
-- `entity/*` will behaves same as just `entity`
-- `entity/write` grants permission only for the specific action `write` under `entity`.
+- `*`: Matches all rules.
+- `/`: Does not match any rule (disabled for security reasons).
+- `entity`: Grants permissions for all actions under `entity`, such as `entity/read` or `entity/write`.
+- `entity/*`: Behaves the same as `entity`, granting all permissions under `entity`.
+- `entity/write`: Grants permission only for the specific action `write` under `entity`.
 
-Additionally, wildcard (`*`) support allows for flexible matching:
+### Wildcard Support
 
-- `entity/*` grants all permissions under `entity`.
+Wildcard (`*`) allows for flexible matching of rules:
 
+- `entity/*`: Grants all permissions under `entity`.
 ## Installation
 
 Install the package using npm or yarn:
