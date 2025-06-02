@@ -35,7 +35,7 @@ export class PermissionsGuardClass<OwnerType = string> {
     return (target: any, memberName: string, descriptor) => {
       const originalFunction = descriptor.value
       descriptor.value = async (...args) => {
-        this.checkRequiredPermissions(required)
+        await this.checkRequiredPermissions(required)
         return originalFunction.bind(target)(...args)
       }
     }
@@ -104,6 +104,19 @@ export class PermissionsGuardClass<OwnerType = string> {
     if (!(await this.ownerChecker(context.owner, entityOwner))) {
       throw new PermissionError('Unauthorized owner')
     }
+  }
+
+  /**
+   * Gets current context's owner.
+   * @returns The owner of the current context.
+   * @throws PermissionError if no context exists.
+   */
+  public async getOwner(): Promise<OwnerType> {
+    const context = await this.getContext()
+    if (!context) {
+      throw new PermissionError('Unauthorized')
+    }
+    return context.owner
   }
 
   /****************************
