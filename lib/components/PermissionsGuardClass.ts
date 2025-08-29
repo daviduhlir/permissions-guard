@@ -44,6 +44,21 @@ export class PermissionsGuardClass<OwnerType = string> {
   }
 
   /**
+   * Decorator to just mark used permissions on a method.
+   * @param used Array of used permission rules.
+   * @returns A method decorator.
+   */
+  public PermissionsUsed = (used: PermissionRule[] = []) => {
+    used.forEach(rule => this.collectedPermissions.add(rule))
+    return (target: any, memberName: string, descriptor) => {
+      const originalFunction = descriptor.value
+      descriptor.value = async (...args) => {
+        return originalFunction.bind(target)(...args)
+      }
+    }
+  }
+
+  /**
    * Runs a callback within a permission context.
    * @param rules Array of permission rules to set in the context.
    * @param owner Owner of the context.
