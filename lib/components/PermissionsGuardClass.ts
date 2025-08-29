@@ -19,6 +19,7 @@ const ownerBypassSymbol = Symbol('ownerBypassSymbol')
  * If you have rights like `/`, it means you can do everything.
  */
 export class PermissionsGuardClass<OwnerType = string> {
+  protected collectedPermissions: Set<PermissionRule> = new Set()
   constructor(
     protected readonly ownerChecker: (contextOwner: OwnerType, requestedOwner: OwnerType) => Promise<boolean> = async (
       contextOwner,
@@ -32,6 +33,7 @@ export class PermissionsGuardClass<OwnerType = string> {
    * @returns A method decorator.
    */
   public PermissionRequired = (required: PermissionRule[] = []) => {
+    required.forEach(rule => this.collectedPermissions.add(rule))
     return (target: any, memberName: string, descriptor) => {
       const originalFunction = descriptor.value
       descriptor.value = async (...args) => {
@@ -117,6 +119,14 @@ export class PermissionsGuardClass<OwnerType = string> {
       throw new PermissionError('Unauthorized')
     }
     return context.owner
+  }
+
+  /**
+   * get all collected permissions in this instance
+   * @returns
+   */
+  public getCollectedPermissions(): PermissionRule[] {
+    return Array.from(this.collectedPermissions)
   }
 
   /****************************
