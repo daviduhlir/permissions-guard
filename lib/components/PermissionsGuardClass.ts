@@ -226,11 +226,8 @@ export class PermissionsGuardClass<OwnerType = string> {
     while (ruleIndex < requiredRuleParts.length && ruleIndex < ruleParts.length) {
       const rulePart = ruleParts[ruleIndex]
 
-      if (rulePart === '**') {
+      if (rulePart === '*') {
         return true
-      } else if (rulePart === '*') {
-        ruleIndex++
-        continue
       } else if (rulePart !== requiredRuleParts[ruleIndex]) {
         return false
       }
