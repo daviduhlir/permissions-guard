@@ -129,6 +129,16 @@ export class PermissionsGuardClass<OwnerType = string> {
     return Array.from(this.collectedPermissions)
   }
 
+  /**
+   * Match permissions rules
+   * @param required
+   * @param rules
+   */
+  public async matchPermissions(required: PermissionRule[], rules: PermissionRule[]) {
+    required.forEach(rule => PermissionsGuardClass.parseRule(rule))
+    await PermissionsGuardClass.match(required, rules)
+  }
+
   /****************************
    *
    * Internal methods
