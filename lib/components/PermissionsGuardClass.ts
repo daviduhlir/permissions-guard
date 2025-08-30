@@ -35,11 +35,12 @@ export class PermissionsGuardClass<OwnerType = string> {
    */
   public PermissionRequired = (required: PermissionRule[] = []) => {
     required.forEach(rule => this.collectedPermissions.add(rule))
+    const self = this
     return (target: any, memberName: string | symbol, descriptor) => {
       const originalFunction = descriptor.value
-      descriptor.value = async (...args) => {
-        await this.checkRequiredPermissions(required)
-        return originalFunction.bind(target)(...args)
+      descriptor.value = async function (...args) {
+        await self.checkRequiredPermissions(required)
+        return originalFunction.bind(this)(...args)
       }
     }
   }
@@ -53,8 +54,8 @@ export class PermissionsGuardClass<OwnerType = string> {
     used.forEach(rule => this.collectedPermissions.add(rule))
     return (target: any, memberName: string, descriptor) => {
       const originalFunction = descriptor.value
-      descriptor.value = async (...args) => {
-        return originalFunction.bind(target)(...args)
+      descriptor.value = async function (...args) {
+        return originalFunction.bind(this)(...args)
       }
     }
   }
