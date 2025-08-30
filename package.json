@@ -1,6 +1,6 @@
 {
   "name": "@david.uhlir/permissions-guard",
-  "version": "0.0.13",
+  "version": "0.0.14",
   "description": "Permissions guard using async context",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
