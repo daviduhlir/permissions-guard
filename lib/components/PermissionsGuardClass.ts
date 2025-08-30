@@ -1,6 +1,7 @@
 import { AsyncLocalStorage } from 'async_hooks'
 import { PermissionRule, PermissionsGuardContextMetadata } from '../interfaces'
 import { PermissionError, PermissionRuleError } from '../utils/errors'
+import { mergeVariables } from '../utils/contextVariables'
 
 const createStorage = () => {
   const storage = new AsyncLocalStorage<{ [key: symbol]: PermissionsGuardContextMetadata<any> }>()
@@ -34,7 +35,7 @@ export class PermissionsGuardClass<OwnerType = string> {
    */
   public PermissionRequired = (required: PermissionRule[] = []) => {
     required.forEach(rule => this.collectedPermissions.add(rule))
-    return (target: any, memberName: string, descriptor) => {
+    return (target: any, memberName: string | symbol, descriptor) => {
       const originalFunction = descriptor.value
       descriptor.value = async (...args) => {
         await this.checkRequiredPermissions(required)
@@ -65,8 +66,8 @@ export class PermissionsGuardClass<OwnerType = string> {
    * @param callback Callback function to execute within the context.
    * @returns The result of the callback function.
    */
-  public async runWithPermissionsBypassOwner<T>(rules: PermissionRule[], callback: () => Promise<T>) {
-    return this.runWithPermissions(rules, ownerBypassSymbol, callback)
+  public async runWithPermissionsBypassOwner<T>(rules: PermissionRule[], callback: () => Promise<T>, variables: Record<string, string[]> = {}) {
+    return this.runWithPermissions(rules, ownerBypassSymbol, callback, variables)
   }
 
   /**
@@ -76,16 +77,23 @@ export class PermissionsGuardClass<OwnerType = string> {
    * @param callback Callback function to execute within the context.
    * @returns The result of the callback function.
    */
-  public async runWithPermissions<T>(rules: PermissionRule[], owner: OwnerType | symbol, callback: () => Promise<T>) {
+  public async runWithPermissions<T>(rules: PermissionRule[], owner: OwnerType | symbol, callback: () => Promise<T>, variables: Record<string, string[]> = {}, inheritRules?: boolean) {
     const context = await this.getContext()
-    if (context) {
+    if (context && !inheritRules) {
       throw new Error('Nested permissions context is dangerous, and it is not allowed.')
     }
+
+    const newContext = {
+      rules: inheritRules && context ? [...context.rules, ...rules] : rules,
+      owner,
+      variables: mergeVariables(context?.variables || {}, variables),
+    }
+
     try {
       return await storage.run(
         {
           ...storage.getStore(),
-          [this.unique]: { rules, owner },
+          [this.unique]: newContext,
         },
         callback,
       )
@@ -105,7 +113,7 @@ export class PermissionsGuardClass<OwnerType = string> {
       throw new PermissionError('Unauthorized')
     }
     required.forEach(rule => PermissionsGuardClass.parseRule(rule))
-    await PermissionsGuardClass.match(required, context?.rules)
+    await PermissionsGuardClass.match(required, context?.rules, context?.variables || {} )
   }
 
   /**
@@ -149,9 +157,9 @@ export class PermissionsGuardClass<OwnerType = string> {
    * @param required
    * @param rules
    */
-  public async matchPermissions(required: PermissionRule[], rules: PermissionRule[]) {
+  public async matchPermissions(required: PermissionRule[], rules: PermissionRule[], variables: Record<string, string[]> = {}) {
     required.forEach(rule => PermissionsGuardClass.parseRule(rule))
-    await PermissionsGuardClass.match(required, rules)
+    await PermissionsGuardClass.match(required, rules, variables)
   }
 
   /****************************
@@ -186,13 +194,13 @@ export class PermissionsGuardClass<OwnerType = string> {
    * @returns Array of matched rules.
    * @throws PermissionRuleError if any required rules are not matched.
    */
-  protected static match(requiredRules: PermissionRule[], rules: PermissionRule[]) {
+  protected static match(requiredRules: PermissionRule[], rules: PermissionRule[], variables: Record<string, string[]> = {}): Array<[PermissionRule, PermissionRule]> {
     const notMatched = []
     const matched = []
     for (const requiredRule of requiredRules) {
       let matchedRule = null
       for (const rule of rules) {
-        if (PermissionsGuardClass.matchRule(requiredRule, rule)) {
+        if (PermissionsGuardClass.matchRule(requiredRule, rule, variables)) {
           matchedRule = rule
           break
         }
@@ -243,7 +251,7 @@ export class PermissionsGuardClass<OwnerType = string> {
    * @param rule The available permission rule.
    * @returns True if the rules match, false otherwise.
    */
-  protected static matchRule(requiredRule: PermissionRule, rule: PermissionRule): boolean {
+  protected static matchRule(requiredRule: PermissionRule, rule: PermissionRule, variables: Record<string, string[]> = {}): boolean {
     const requiredRuleParts = PermissionsGuardClass.parseRule(requiredRule)
     const ruleParts = PermissionsGuardClass.parseRule(rule)
 
@@ -251,8 +259,16 @@ export class PermissionsGuardClass<OwnerType = string> {
     while (ruleIndex < requiredRuleParts.length && ruleIndex < ruleParts.length) {
       const rulePart = ruleParts[ruleIndex]
 
-      if (rulePart === '*') {
+      if (rulePart === '**') {
         return true
+      } if (rulePart === '*') {
+        ruleIndex++
+        continue
+      } else if (ruleParts[ruleIndex].startsWith(':')) {
+        const varName = ruleParts[ruleIndex].substring(1)
+        if (!variables || !variables[varName] || !variables[varName].includes(requiredRuleParts[ruleIndex])) {
+          return false
+        }
       } else if (rulePart !== requiredRuleParts[ruleIndex]) {
         return false
       }

@@ -116,6 +116,28 @@ await PermissionsGuard.runWithPermissions(rules, 'user123', async () => {
 })
 ```
 
+### Using rule parameters
+
+Permissions can also use context variables. Its useful for checking ownership of entities.
+
+Example:
+```typescript
+// Define permission rules
+const ownerPermissions = ['entity/read', 'entity/:ownedEntities/read']
+const owner = 'user123'
+
+const ownedEntities = [
+  'entity1',
+  'entity2',
+]
+
+// Run a function within a permission context
+await PermissionsGuard.runWithPermissions(ownerPermissions, owner, async () => {
+  const readingId = 'entity1'
+  await PermissionsGuard.checkRequiredPermissions([`entity/${readingId}/read`])
+}, { ownedEntities } )
+```
+
 ## API Documentation
 
 ### `PermissionsGuard`
@@ -134,7 +156,7 @@ A decorator to enforce required permissions on a method.
   }
   ```
 
-#### `runWithPermissions<T>(rules: PermissionRule[], owner: OwnerType, callback: () => Promise<T>): Promise<T>`
+#### `runWithPermissions<T>(rules: PermissionRule[], owner: OwnerType, callback: () => Promise<T>, variables: Record<string, string[]> = {}, inheritRule?: boolean): Promise<T>`
 
 Runs a callback within a permission context.
 
@@ -142,15 +164,18 @@ Runs a callback within a permission context.
   - `rules` (PermissionRule[]): Array of permission rules to set in the context.
   - `owner` (OwnerType): Owner of the context.
   - `callback` (Function): Callback function to execute within the context.
+  - `variables` Context variables that can be used in rules
+  - `inheritRule` Allows nested rules to extend actual context
 - **Returns**: The result of the callback function.
 
-#### `runWithPermissionsBypassOwner<T>(rules: PermissionRule[], callback: () => Promise<T>): Promise<T>`
+#### `runWithPermissionsBypassOwner<T>(rules: PermissionRule[], callback: () => Promise<T>, variables: Record<string, string[]> = {}): Promise<T>`
 
 Runs a callback within an administrative permission context. This allows access to entities or actions that are typically restricted to administrators.
 
 - **Parameters**:
   - `rules` (PermissionRule[]): Array of permission rules to set in the context.
   - `callback` (Function): Callback function to execute within the administrative context.
+  - `variables` Context variables that can be used in rules
 - **Returns**: The result of the callback function.
 
 - **Example**:

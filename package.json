@@ -34,5 +34,8 @@
     "rimraf": "^2.6.2",
     "ts-mocha": "^10.0.0",
     "typescript": "^5.5.4"
+  },
+  "dependencies": {
+    "reflect-metadata": "^0.2.2"
   }
 }
