@@ -151,6 +151,19 @@ export class PermissionsGuardClass<OwnerType = string> {
   }
 
   /**
+   * Gets current context's permissions.
+   * @returns The owner of the current context.
+   * @throws PermissionError if no context exists.
+   */
+  public async getPermissions(): Promise<PermissionRule[]> {
+    const context = await this.getContext()
+    if (!context) {
+      throw new PermissionError('Unauthorized')
+    }
+    return context.rules
+  }
+
+  /**
    * get all collected permissions in this instance
    * @returns
    */
