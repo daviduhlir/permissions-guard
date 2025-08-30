@@ -92,7 +92,7 @@ export class PermissionsGuardClass<OwnerType = string> {
     const newContext = {
       rules: inheritRules && context ? [...context.rules, ...rules] : rules,
       owner,
-      variables: mergeVariables(context?.variables || {}, variables),
+      variables: inheritRules ? mergeVariables(context?.variables || {}, variables) : variables,
     }
 
     try {
