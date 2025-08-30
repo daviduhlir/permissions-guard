@@ -77,7 +77,13 @@ export class PermissionsGuardClass<OwnerType = string> {
    * @param callback Callback function to execute within the context.
    * @returns The result of the callback function.
    */
-  public async runWithPermissions<T>(rules: PermissionRule[], owner: OwnerType | symbol, callback: () => Promise<T>, variables: Record<string, string[]> = {}, inheritRules?: boolean) {
+  public async runWithPermissions<T>(
+    rules: PermissionRule[],
+    owner: OwnerType | symbol,
+    callback: () => Promise<T>,
+    variables: Record<string, string[]> = {},
+    inheritRules?: boolean,
+  ) {
     const context = await this.getContext()
     if (context && !inheritRules) {
       throw new Error('Nested permissions context is dangerous, and it is not allowed.')
@@ -113,7 +119,7 @@ export class PermissionsGuardClass<OwnerType = string> {
       throw new PermissionError('Unauthorized')
     }
     required.forEach(rule => PermissionsGuardClass.parseRule(rule))
-    await PermissionsGuardClass.match(required, context?.rules, context?.variables || {} )
+    await PermissionsGuardClass.match(required, context?.rules, context?.variables || {})
   }
 
   /**
@@ -194,7 +200,11 @@ export class PermissionsGuardClass<OwnerType = string> {
    * @returns Array of matched rules.
    * @throws PermissionRuleError if any required rules are not matched.
    */
-  protected static match(requiredRules: PermissionRule[], rules: PermissionRule[], variables: Record<string, string[]> = {}): Array<[PermissionRule, PermissionRule]> {
+  protected static match(
+    requiredRules: PermissionRule[],
+    rules: PermissionRule[],
+    variables: Record<string, string[]> = {},
+  ): Array<[PermissionRule, PermissionRule]> {
     const notMatched = []
     const matched = []
     for (const requiredRule of requiredRules) {
@@ -261,7 +271,8 @@ export class PermissionsGuardClass<OwnerType = string> {
 
       if (rulePart === '**') {
         return true
-      } if (rulePart === '*') {
+      }
+      if (rulePart === '*') {
         ruleIndex++
         continue
       } else if (ruleParts[ruleIndex].startsWith(':')) {
